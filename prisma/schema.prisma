@@ -1,0 +1,138 @@
+// Prisma schema for AI Lead Generation Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id                String   @id @default(cuid())
+  companyName       String
+  websiteUrl        String?
+  location          String?
+  industry          String?
+
+  // Status tracking
+  status            LeadStatus @default(PENDING)
+  processingStage   String?
+  lastProcessedAt   DateTime?
+
+  // Enrichment data
+  websiteTech       Json?
+  socialMediaInfo   Json?
+  whatsappStatus    Json?
+  companyInfo       Json?
+  normalizedData    Json?
+
+  // Lead scoring
+  leadScore         Int?
+  potentialTag      PotentialTag?
+  scoringNotes      String?
+  enrichedInsights  Json?
+
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  history           LeadHistory[]
+  automationTasks   AutomationTask[]
+
+  @@index([status])
+  @@index([leadScore])
+  @@index([createdAt])
+}
+
+model LeadHistory {
+  id                String   @id @default(cuid())
+  leadId            String
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  action            String
+  previousScore     Int?
+  newScore          Int?
+  changes           Json?
+  performedAt       DateTime @default(now())
+
+  @@index([leadId])
+  @@index([performedAt])
+}
+
+model AutomationTask {
+  id                String   @id @default(cuid())
+  leadId            String?
+  lead              Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  taskType          AutomationTaskType
+  status            TaskStatus @default(PENDING)
+  scheduledFor      DateTime?
+  executedAt        DateTime?
+
+  config            Json?
+  result            Json?
+  error             String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([taskType])
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+model ApiKey {
+  id                String   @id @default(cuid())
+  service           String   @unique
+  apiKey            String
+  isActive          Boolean  @default(true)
+
+  usageCount        Int      @default(0)
+  lastUsedAt        DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SystemConfig {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  value             String
+  description       String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+enum LeadStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRY
+}
+
+enum PotentialTag {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AutomationTaskType {
+  DAILY_UPDATE
+  WEEKLY_UPDATE
+  EMAIL_TOP_LEADS
+  SCORE_HISTORY_TRACK
+  GENERATE_OUTREACH
+  EXPORT_REPORT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}

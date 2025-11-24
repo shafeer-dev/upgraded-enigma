@@ -34,3 +34,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database
+*.db
+*.sqlite
+
+# prisma
+/prisma/migrations
+
+# logs
+logs
+*.log
+
+# api keys and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
